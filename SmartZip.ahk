@@ -16,55 +16,98 @@ app := "SmartZip"
 #NoTrayIcon
 
 ini.Init(A_ScriptDir "\" app ".ini")
+; 调用 ini 对象的 Init 方法，传入参数为当前脚本目录下的 SmartZip.ini 文件路径。
+; A_ScriptDir 是 AutoHotkey 内置变量，表示当前脚本所在的目录。
+; app 是一个变量，值为 "SmartZip"。
+; 这行代码的作用是设置 ini 对象的路径为 SmartZip.ini 文件。
+
 IniCreate
+; 调用 IniCreate 函数。
+; 该函数的作用是检查并创建 SmartZip.ini 配置文件，并写入默认配置项。
 zip := SmartZip(RelativePath(ini.zipDir))
 
 ;https://www.iconfont.cn/collections/detail?spm=a313x.7781069.0.da5a778a4&cid=24599
+; 调用 SmartZip 类的构造函数，传入参数为 ini.zipDir 的相对路径。
 icon := FileExist(icon := RelativePath(ini.icon)) ? icon : ""
-
+; RelativePath 是一个函数，用于将 ini.zipDir 转换为相对路径。
+; 这行代码的作用是创建一个 SmartZip 类的实例，并将其赋值给 zip 变量。
 TraySetIcon(icon)
 
 if A_Args.Length
+    ; 检查是否有传入命令行参数。
+    ; zip 是 SmartZip 类的实例。
+    ; Init 方法初始化 zip 对象，并根据传入的参数进行设置。
+    ; 调用 Exec 方法执行相应的操作（如解压、压缩等）。
     zip.Init(A_Args).Exec()
+    ; 如果有传入参数，则调用 zip 对象的 Init 方法，并传入 A_Args 作为参数。
+    ; zip 是 SmartZip 类的实例。
+    ; Init 方法初始化 zip 对象，并根据传入的参数进行设置。
+    ; 调用 Exec 方法执行相应的操作（如解压、压缩等）。
+    ; else：
 else
     Setting
 
+; 调用 Setting 函数。
+; Setting 函数用于显示设置界面，允许用户进行配置。
+
+
+; 创建 SmartZip 类的实例的目的是为了使用该类提供的功能来处理压缩和解压缩操作。具体来说，实例化 SmartZip 类后，可以调用其方法来执行各种与压缩文件相关的操作，如初始化配置、解压文件、创建压缩包等。
 class SmartZip
 {
     __New(sevenZipDir)
+    ; 构造函数，接受一个参数 sevenZipDir，表示 7-zip 的安装目录。
     {
         this.now := A_TickCount
+        ; 初始化 now 属性为当前的计时器计数。
         this.exitCode := -1
+        ; 初始化 exitCode 属性为 -1，表示默认的退出代码。
         this.setShow := false
+        ; 初始化 setShow 属性为 false，表示默认不显示设置界面。
 
-        sevenZipDir := sevenZipDir ~= "i)^[a-z]:\\$" ? sevenZipDir : RTrim(sevenZipDir, "\")
+        sevenZipDir := sevenZipDir ~= "i)^[a-z]:\\$" ? sevenZipDir : RTrim
+        ; 如果 sevenZipDir 不是以字母加冒号加反斜杠开头的字符串，则将 sevenZipDir 赋值为 RTrim
+        (sevenZipDir, "\")
+        ; RTrim 函数用于删除字符串末尾的指定字符。
 
         if !DirExist(sevenZipDir)
+            ; 如果 sevenZipDir 不是一个存在的目录，则弹出消息框提示用户。
             return MsgBox("7-zip 文件夹不存在,请设置其路径")
 
         this.7z := sevenZipDir "\7z.exe"
+        ; 初始化 7z 属性为 sevenZipDir 目录下的 7z.exe 文件。
         this.7zG := sevenZipDir "\7zG.exe"
+        ; 初始化 7zG 属性为 sevenZipDir 目录下的 7zG.exe 文件。
         this.7zFM := sevenZipDir "\7zFM.exe"
+        ; 初始化 7zFM 属性为 sevenZipDir 目录下的 7zFM.exe 文件。
 
         if !FileExist(this.7z) || !FileExist(this.7zG) || !FileExist(this.7zFM)
+            ; 如果 7z、7zG、7zFM 三个文件中有一个不存在，则弹出消息框提示用户。
             return MsgBox("7-zip 文件夹中必需包含 7z.exe,7zG.exe,7zFM.exe`n请检测文件夹是否设置正确")
     }
 
     Init(argsArr)
+    ; Init 方法，接受一个参数 argsArr，表示传入的参数数组。
     {
         this.codePage := ""
+        ; 初始化 codePage 属性为空字符串。
         if argsArr[1] = "xc"
+            ; 如果 argsArr 的第一个元素为 "xc"，则调用 SetCodePage 方法。
             SetCodePage(), argsArr.RemoveAt(1)
+            ; SetCodePage 方法用于设置代码页。
 
         if RegExMatch(argsArr[1], "^[xoa]$")
+            ; 如果 argsArr 的第一个元素为 "x"、"o" 或 "a"，则将其赋值给 this.to 属性。
             this.to := argsArr[1], argsArr.RemoveAt(1)	;根据第一个传入参数决定动作
         else
             this.to := "x"
+            ; 否则，将 "x" 赋值给 this.to 属性。
 
         this.arr := []
+        ; 初始化 arr 属性为空数组。
         for i in argsArr
         {
             if FileExist(i)
+                ; 如果 i 是一个存在的文件，则将其添加到 arr 数组中。
                 loop files RTrim(i, "\"), "DF"
                     this.arr.Push(A_LoopFileFullPath)
         }
